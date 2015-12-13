@@ -1,0 +1,276 @@
+F: Faces.db
+L: Library.apdb
+P: Properties.apdb
+
+Peti 18:00
+Pécs
+Eszék u. 31.
+
+
+# Library.apdb tables
+
+    RKAdminData                     RKKeywordForVersion
+    RKAlbum                         RKKeyword_CharIndex
+    RKAlbumVersion                  RKMaster
+    RKAlbumVersion_RidIndexes       RKMasterGroup
+    RKAlbum_RidIndexes              RKMaster_RidIndexes
+    RKAttachment                    RKNote
+    RKCustomSortOrder               RKPlaceForVersion
+    RKFolder                        RKPropertySet
+    RKFolder_RidIndexes             RKStackContent
+    RKGroupsForMasters              RKStackState
+    RKGroupsForMasters_RidIndexes   RKVault
+    RKGroupsForVersions             RKVersion
+    RKGroupsForVersions_RidIndexes  RKVersionFaceContent
+    RKImageAdjustment               RKVersionGroup
+    RKImageMask                     RKVersion_RidIndexes
+    RKImportGroup                   RKVolume
+    RKKeyword
+
+
+
+    CREATE TABLE RKMaster (
+	modelId integer primary key,
+	uuid varchar,
+	name varchar,
+	projectUuid varchar,
+	importGroupUuid varchar,
+	fileVolumeUuid varchar,
+	alternateMasterUuid varchar,
+	originalVersionUuid varchar,
+	originalVersionName varchar,
+	fileName varchar,
+	type varchar,
+	subtype varchar,
+	fileIsReference integer,
+	isExternallyEditable integer,
+	isTrulyRaw integer,
+	isMissing integer,
+	hasAttachments integer,
+	hasNotes integer,
+	hasFocusPoints integer,
+	imagePath varchar,
+	fileSize integer,
+	pixelFormat integer,
+	duration decimal,
+	imageDate timestamp,
+	fileCreationDate timestamp,
+	fileModificationDate timestamp,
+	imageHash varchar,
+	originalFileName varchar,
+	originalFileSize integer,
+	imageFormat integer,
+	createDate timestamp,
+	isInTrash integer,
+	faceDetectionState integer,
+	colorSpaceName varchar,
+	colorSpaceDefinition blob,
+	fileAliasData blob,
+	importedBy integer,
+	streamAssetId varchar,
+	streamSourceUuid varchar);
+
+    CREATE TABLE RKVersion (
+	modelId integer primary key,
+	uuid varchar,
+	name varchar,
+	fileName varchar,
+	versionNumber integer,
+	stackUuid varchar,
+	masterUuid varchar,
+	masterId integer,
+	rawMasterUuid varchar,
+	nonRawMasterUuid varchar,
+	projectUuid varchar,
+	imageTimeZoneName varchar,
+	imageDate timestamp,
+	mainRating integer,
+	isHidden integer,
+	isFlagged integer,
+	isOriginal integer,
+	isEditable integer,
+	colorLabelIndex integer,
+	masterHeight integer,
+	masterWidth integer,
+	processedHeight integer,
+	processedWidth integer,
+	rotation integer,
+	hasAdjustments integer,
+	hasEnabledAdjustments integer,
+	hasNotes integer,
+	createDate timestamp,
+	exportImageChangeDate timestamp,
+	exportMetadataChangeDate timestamp,
+	isInTrash integer,
+	thumbnailGroup varchar,
+	overridePlaceId integer,
+	exifLatitude decimal,
+	exifLongitude decimal,
+	renderVersion integer,
+	adjSeqNum integer,
+	supportedStatus integer,
+	videoInPoint varchar,
+	videoOutPoint varchar,
+	videoPosterFramePoint varchar,
+	showInLibrary integer,
+	editState integer,
+	contentVersion integer,
+	propertiesVersion integer,
+	rawVersion varchar,
+	faceDetectionIsFromPreview integer,
+	faceDetectionRotationFromMaster integer,
+	editListData blob,
+	hasKeywords integer);
+
+    CREATE TABLE RKVersionFaceContent (
+	modelId INTEGER PRIMARY KEY,
+	versionId INTEGER,
+	masterId INTEGER,
+	isNamed INTEGER,
+	faceKey INTEGER,
+	faceIndex INTEGER);
+
+    CREATE TABLE RKFolder (
+	modelId INTEGER PRIMARY KEY,
+	uuid VARCHAR,
+	folderType INTEGER,
+	name VARCHAR,
+	parentFolderUuid VARCHAR,
+	implicitAlbumUuid VARCHAR,
+	posterVersionUuid VARCHAR,
+	automaticallyGenerateFullSizePreviews INTEGER,
+	versionCount INTEGER,
+	minImageDate TIMESTAMP,
+	maxImageDate TIMESTAMP,
+	folderPath VARCHAR,
+	createDate TIMESTAMP,
+	isExpanded INTEGER,
+	isHidden INTEGER,
+	isFavorite INTEGER,
+	isInTrash INTEGER,
+	isMagic INTEGER,
+	colorLabelIndex INTEGER,
+	sortAscending INTEGER,
+	sortKeyPath VARCHAR,
+	isHiddenWhenEmpty INTEGER,
+	minImageTimeZoneName VARCHAR,
+	maxImageTimeZoneName VARCHAR);
+
+    CREATE TABLE RKPlaceForVersion (
+	modelId INTEGER PRIMARY KEY,
+	versionId INTEGER,
+	placeId INTEGER);
+
+# Faces.db tables
+
+    RKDetectedFace             RKFaceExternal
+    RKDetectedFaceBlob         RKFaceFeature
+    RKDetectedFaceExternal     RKFaceName
+    RKDetectedFace_RidIndexes  RKSimilarFaces
+
+    CREATE TABLE RKFaceName (
+	modelId INTEGER PRIMARY KEY,
+	uuid VARCHAR,
+	faceKey INTEGER,
+	keyVersionUuid VARCHAR,
+	name VARCHAR,
+	fullName VARCHAR,
+	email VARCHAR,
+	similarFacesCached INTEGER,
+	similarFacesOpen INTEGER,
+	manualOrder INTEGER,
+	attrs BLOB,
+	lastUsedDate TIMESTAMP);
+
+    CREATE TABLE RKFaceFeature (
+	modelId INTEGER PRIMARY KEY,
+	detectedFaceId INTEGER,
+	featureIndex INTEGER,
+	x DECIMAL,
+	y DECIMAL,
+	confidence DECIMAL);
+
+    CREATE TABLE RKFaceExternal (
+	modelId INTEGER PRIMARY KEY,
+	faceKey INTEGER,
+	serviceKey VARCHAR,
+	reference VARCHAR);
+
+# Properties.apdb tables
+
+    RKCharacterIndex      RKIptc_RidIndexes     RKPlace_RTree_node
+    RKExifNumberProperty  RKOtherProperty       RKPlace_RTree_parent
+    RKExifStringProperty  RKOther_RidIndexes    RKPlace_RTree_rowid
+    RKExif_RidIndexes     RKPlace               RKStatistic
+    RKFaceProperty        RKPlaceName           RKUniqueString
+    RKIptcProperty        RKPlace_RTree
+
+    CREATE TABLE RKPlace (
+	modelId INTEGER PRIMARY KEY,
+	uuid VARCHAR,
+	defaultName VARCHAR,
+	recordLocator INTEGER,
+	type INTEGER,
+	isLowest INTEGER,
+	userDefined INTEGER,
+	geoVersion DECIMAL,
+	minLongitude DECIMAL,
+	maxLongitude DECIMAL,
+	minLatitude DECIMAL,
+	maxLatitude DECIMAL,
+	centroid VARCHAR,
+	createDate TIMESTAMP,
+	modDate TIMESTAMP,
+	boundaryData BLOB);
+
+    CREATE TABLE RKPlaceName (
+	modelId INTEGER PRIMARY KEY,
+	placeId INTEGER,
+	language VARCHAR,
+	description VARCHAR);
+
+    CREATE TABLE RKFaceProperty (
+	modelId INTEGER PRIMARY KEY,
+	faceNameId INTEGER,
+	propertyKey VARCHAR,
+	stringId INTEGER,
+	searchStringId INTEGER,
+	modDate TIMESTAMP);
+
+    CREATE TABLE RKIptcProperty (
+	modelId INTEGER PRIMARY KEY,
+	versionId INTEGER,
+	propertyKey VARCHAR,
+	stringId INTEGER,
+	modDate TIMESTAMP,
+	searchStringId INTEGER);
+
+    CREATE TABLE RKUniqueString (
+	modelId INTEGER PRIMARY KEY,
+	stringProperty VARCHAR);
+
+# Notes
+
+https://github.com/bdwilson/iPhotoDump/blob/master/iPhotoDump.pl
+
+select V.modelId, M.imagePath, V.imageDate, M.fileSize, V.fileName, V.name,
+	(select name from L.RKFolder as F where V.projectUuid=F.uuid),
+	(select stringProperty from P.RKUniqueString as U
+	    where U.modelId=(select stringId from P.RKIptcProperty as I
+		where I.versionId=V.modelId and I.propertyKey='Caption/Abstract')),
+	V.mainRating
+    from L.RKVersion as V
+	inner join L.RKMaster as M on V.masterUuid=M.uuid
+    order by V.imageDate
+
+L.RKVersion.masterUuid → L.RKMaster.uuid
+L.RKVersion.projectUuid → L.RkFolder.uuid
+L.RKVersion.modelId → P.RKIptcProperty.versionId
+P.RKIptcProperty.stringId → P.RKUniqueString.modelId
+
+L.RKVersionFaceContent.faceKey → F.RKFaceName.faceKey
+
+"event name" in L.RKFolder.name
+"description" in P.RKUniqueString.stringProperty
+
+

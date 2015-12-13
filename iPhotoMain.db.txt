@@ -1,0 +1,135 @@
+sqlite> .tables
+AlbumsPhotosJoin     SqFileImage          SqPlace
+GpsTracksEventsJoin  SqFileInfo           SqPlaceName
+KeywordsPhotosJoin   SqFilterAlbum        SqPrintAlbum
+MasterSchema         SqGlobals            SqPublishedAlbum
+SqAlbum              SqGpsTrack           SqSlideshowAlbum
+SqBookAlbum          SqKeyword            SqSubscribedAlbum
+SqEvent              SqPhotoInfo          SqUserPlace
+
+SqFileImage.photoKey → SqPhotoInfo.primaryKey
+SqFileImage.sqFileInfo → SqFileInfo.primaryKey
+
+SqPhotoInfo.namedPlace → SqPlaceName.place # select based on SqPlaceName.language
+SqPhotoInfo.event → SqEvent.primaryKey
+
+SqEvent.namedPlace → SqPlaceName.place
+
+KeywordsPhotosJoin.sqKeyword → SqKeyword.primaryKey
+KeywordsPhotosJoin.sqPhotoInfo → SqPhotoInfo.primaryKey
+
+CREATE TABLE SqFileImage (
+    primaryKey INTEGER PRIMARY KEY AUTOINCREMENT,
+    photoKey INT,
+    imageType INT,
+    version INT,
+    imageWidth REAL,
+    imageHeight REAL,
+    rotation REAL,
+    rasterToDisplayRotation REAL,
+    currentToOriginalRotation REAL,
+    fileSize INT,
+    sqFileInfo INT);
+
+CREATE TABLE SqPhotoInfo (
+    primaryKey INTEGER PRIMARY KEY AUTOINCREMENT,
+    photoDate REAL,
+    isVisible INT,
+    showInLibrary INT,
+    isUserHidden INT,
+    isOpen INT,
+    caption VARCHAR,
+    comments VARCHAR,
+    uid VARCHAR,
+    ranking INT,
+    readOnly INT,
+    faceDetectionFromCached INT,
+    faceDetectionRotationFromOriginal REAL,
+    editState INT,
+    thumbnailVersion INT,
+    thumbCacheIndex INT,
+    metaModDate REAL,
+    modificationDate REAL,
+    archiveFilename VARCHAR,
+    cameraModel VARCHAR,
+    isoSpeedRating INT,
+    flash INT,
+    shutterSpeed REAL,
+    aperture REAL,
+    focalLength REAL,
+    needsLocationLookup INT,
+    locationCountry VARCHAR,
+    locationState VARCHAR,
+    locationCounty VARCHAR,
+    locationCity VARCHAR,
+    locationPostalCode VARCHAR,
+    locationStreet VARCHAR,
+    gpsLatitude REAL,
+    gpsLongitude REAL,
+    manualLocation INT,
+    ocean INT,
+    country INT,
+    province INT,
+    county INT,
+    city INT,
+    neighborhood INT,
+    aoi INT,
+    poi INT,
+    namedPlace INT,
+    originalEvent INT,
+    event INT);
+
+CREATE TABLE SqFileInfo (
+    primaryKey INTEGER PRIMARY KEY AUTOINCREMENT,
+    format INT,
+    relativePath VARCHAR,
+    aliasPath VARCHAR);
+
+CREATE TABLE SqEvent (
+	primaryKey INTEGER PRIMARY KEY AUTOINCREMENT,
+	keyPhotoKey INT,
+	name VARCHAR,
+	comment VARCHAR,
+	rollDate REAL,
+	rollDirectories BLOB,
+	rollID INT,
+	currentPhotoKey INT,
+	displayOrder INT,
+	emptyRoll INT,
+	uid VARCHAR,
+	locationStreet VARCHAR,
+	locationCity VARCHAR,
+	locationCounty VARCHAR,
+	locationState VARCHAR,
+	locationPostalCode VARCHAR,
+	locationCountry VARCHAR,
+	locationLatitude REAL,
+	locationLongitude REAL,
+	locationRadius REAL,
+	locationKey INT,
+	manualLocation INT,
+	ocean INT,
+	country INT,
+	province INT,
+	county INT,
+	city INT,
+	neighborhood INT,
+	aoi INT,
+	poi INT,
+	namedPlace INT,
+	attributes BLOB);
+
+CREATE TABLE KeywordsPhotosJoin (
+	sqKeyword INT,
+	sqPhotoInfo INT);
+
+CREATE TABLE SqKeyword (
+	primaryKey INTEGER PRIMARY KEY AUTOINCREMENT,
+	title VARCHAR,
+	shortcut VARCHAR);
+
+CREATE TABLE SqPlaceName (
+	primaryKey INTEGER PRIMARY KEY AUTOINCREMENT,
+	place INT,
+	language VARCHAR,
+	string VARCHAR);
