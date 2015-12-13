@@ -1,4 +1,4 @@
-package iphoto
+package iphotolib
 
 import (
 	"archive/zip"
@@ -9,25 +9,65 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-)
 
-type Dir interface {
-	Stat(fn string) (os.FileInfo, error)
-	Open(fn string) (io.ReadCloser, error)
-}
+	"golang.org/x/text/unicode/norm"
+)
 
 const apdbPath = "Database/apdb"
 
-func LoadIphotoDir(path string) (*DB, error) {
-	return LoadIphotoDB(filepath.Join(path, apdbPath))
+func Open(path string) (*DB, error) {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	if fi.IsDir() {
+		return openIphotoDir(path)
+	}
+	return openIphotoZip(path)
 }
 
-func LoadIphotoZip(path string) (*DB, error) {
+type photoDir interface {
+	Stat(fn string) (os.FileInfo, error)
+	Open(fn string) (io.ReadCloser, error)
+	Close() error
+}
+
+func openIphotoDir(path string) (*DB, error) {
+	db := &DB{
+		dir: prefixPhotoDir(path),
+	}
+	err := readIphotoDB(db, filepath.Join(path, apdbPath))
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
+type prefixPhotoDir string
+
+func (d prefixPhotoDir) Stat(fn string) (os.FileInfo, error) {
+	return os.Stat(filepath.Join(string(d), fn))
+}
+
+func (d prefixPhotoDir) Open(fn string) (io.ReadCloser, error) {
+	return os.Open(filepath.Join(string(d), fn))
+}
+
+func (d prefixPhotoDir) Close() error {
+	return nil
+}
+
+func openIphotoZip(path string) (*DB, error) {
 	z, err := zip.OpenReader(path)
 	if err != nil {
 		return nil, err
 	}
-	defer z.Close()
+	ok := false
+	defer func() {
+		if !ok {
+			z.Close()
+		}
+	}()
 
 	root, err := findZipDBRoot(&z.Reader)
 	if err != nil {
@@ -66,7 +106,56 @@ func LoadIphotoZip(path string) (*DB, error) {
 		}
 	}
 
-	return LoadIphotoDB(tempDir)
+	db := &DB{
+		dir: newZipPhotoDir(z, root),
+	}
+	if err := readIphotoDB(db, tempDir); err != nil {
+		return nil, err
+	}
+	ok = true
+	return db, nil
+}
+
+type zipPhotoDir struct {
+	*zip.ReadCloser
+	// m maps lowercase path using slashes to files
+	m map[string]*zip.File
+}
+
+func newZipPhotoDir(z *zip.ReadCloser, base string) *zipPhotoDir {
+	base = zipPath(base)
+	if base != "" {
+		// clean removes last slash
+		base += "/"
+	}
+	m := make(map[string]*zip.File)
+	for _, f := range z.File {
+		s := zipPath(f.Name)
+		if strings.HasPrefix(s, base) {
+			m[s[len(base):]] = f
+		}
+	}
+	return &zipPhotoDir{z, m}
+}
+
+func (d *zipPhotoDir) Stat(fn string) (os.FileInfo, error) {
+	zf := d.m[zipPath(fn)]
+	if zf == nil {
+		return nil, os.ErrNotExist
+	}
+	return zf.FileInfo(), nil
+}
+
+func (d *zipPhotoDir) Open(fn string) (io.ReadCloser, error) {
+	zf := d.m[zipPath(fn)]
+	if zf == nil {
+		return nil, os.ErrNotExist
+	}
+	return zf.Open()
+}
+
+func zipPath(p string) string {
+	return filepath.ToSlash(filepath.Clean(strings.ToLower(norm.NFC.String(p))))
 }
 
 func extractFile(destdir string, f *zip.File) error {

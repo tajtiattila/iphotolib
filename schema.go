@@ -1,24 +1,6 @@
-package iphoto
+package iphotolib
 
 import "time"
-
-type Photo struct {
-	Path     string
-	Date     time.Time
-	FileSize int64
-	FileName string
-	Name     string
-	Desc     string
-	Rating   int
-
-	Event EventKey
-	Place PlaceKey
-
-	Hidden   bool
-	Flagged  bool
-	Original bool
-	InTrash  bool
-}
 
 type PhotoKey int
 
@@ -68,4 +50,6 @@ type DB struct {
 	PlacePhoto map[PlaceKey][]PhotoKey
 
 	PhotoFace map[PhotoKey][]FaceKey
+
+	dir photoDir
 }

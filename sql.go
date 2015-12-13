@@ -1,4 +1,4 @@
-package iphoto
+package iphotolib
 
 import (
 	"database/sql"
@@ -7,20 +7,20 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/text/unicode/norm"
 )
 
-func LoadIphotoDB(prefix string) (db *DB, err error) {
-	db = new(DB)
+func readIphotoDB(db *DB, prefix string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			db, err = nil, r.(error)
+			err = r.(error)
 		}
 	}()
-	loadIphotoDB(db, prefix)
-	return db, nil
+	mustReadIphotoDB(db, prefix)
+	return nil
 }
 
-func loadIphotoDB(res *DB, prefix string) {
+func mustReadIphotoDB(res *DB, prefix string) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	panicOn(err)
 	defer db.Close()
@@ -80,6 +80,9 @@ func loadIphotoDB(res *DB, prefix string) {
 			&p.Path, &timestamp, &p.FileSize,
 			&p.FileName, &p.Name, &p.Desc,
 			&p.Rating, &isHidden, &isFlagged, &isOriginal, &isInTrash))
+		p.FileName = norm.NFC.String(p.FileName)
+		p.Name = norm.NFC.String(p.Name)
+		p.Path = norm.NFC.String(p.Path)
 		p.Date = fixTimeStamp(timestamp)
 		p.Hidden = isHidden != 0
 		p.Flagged = isFlagged != 0
@@ -88,6 +91,7 @@ func loadIphotoDB(res *DB, prefix string) {
 		pk, ek, lk := PhotoKey(photoId), EventKey(eventId), PlaceKey(placeId)
 		p.Event = ek
 		p.Place = lk
+		p.dir = res.dir
 		res.Photo[pk] = p
 		res.EventPhoto[ek] = append(res.EventPhoto[ek], pk)
 		res.PlacePhoto[lk] = append(res.PlacePhoto[lk], pk)
@@ -116,7 +120,7 @@ func loadIphotoDB(res *DB, prefix string) {
 		panicOn(rows.Scan(&eventId, &name, &mind, &maxd,
 			&isHidden, &isFavorite, &isInTrash))
 		res.Event[EventKey(eventId)] = Event{
-			Name:     name,
+			Name:     norm.NFC.String(name),
 			MinDate:  toTimeStamp(mind),
 			MaxDate:  toTimeStamp(maxd),
 			Hidden:   isHidden != 0,
@@ -148,6 +152,7 @@ func loadIphotoDB(res *DB, prefix string) {
 			&p.Min.Lat, &p.Min.Lon,
 			&p.Max.Lat, &p.Max.Lon,
 			&centroid))
+		p.Name = norm.NFC.String(p.Name)
 		_, err = fmt.Sscanf(centroid, "%v,%v", &p.Centroid.Lat, &p.Centroid.Lon)
 		if err != nil {
 			p.Centroid.Lat = (p.Min.Lat + p.Max.Lat) / 2
@@ -173,6 +178,9 @@ func loadIphotoDB(res *DB, prefix string) {
 		var faceId int
 		var f Face
 		panicOn(rows.Scan(&faceId, &f.Name, &f.FullName, &f.Email))
+		f.Name = norm.NFC.String(f.Name)
+		f.FullName = norm.NFC.String(f.FullName)
+		f.Email = norm.NFC.String(f.Email)
 		res.Face[FaceKey(faceId)] = f
 	}
 	panicOn(rows.Err())
