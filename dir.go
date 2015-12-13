@@ -1,3 +1,26 @@
+// Copyright (c) 2015 Attila Tajti
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+// Package iphotolib provides access to Apple® iPhoto® databases.
+// An iPhoto Library may be accessed either directly
+// (typically on OSX) or it can be packed within a zip file.
 package iphotolib
 
 import (
@@ -15,7 +38,11 @@ import (
 
 const apdbPath = "Database/apdb"
 
-func Open(path string) (*DB, error) {
+// Open opens the database for reading. The provided path
+// should be either a zip file or point to an iPhoto Library folder.
+// Open reads all data from the internal sqlite databases
+// and provides access to images and thumbnails.
+func Open(path string) (*Lib, error) {
 	fi, err := os.Stat(path)
 	if err != nil {
 		return nil, err
@@ -32,15 +59,15 @@ type photoDir interface {
 	Close() error
 }
 
-func openIphotoDir(path string) (*DB, error) {
-	db := &DB{
+func openIphotoDir(path string) (*Lib, error) {
+	lib := &Lib{
 		dir: prefixPhotoDir(path),
 	}
-	err := readIphotoDB(db, filepath.Join(path, apdbPath))
+	err := readIphotoDB(lib, filepath.Join(path, apdbPath))
 	if err != nil {
 		return nil, err
 	}
-	return db, nil
+	return lib, nil
 }
 
 type prefixPhotoDir string
@@ -57,7 +84,7 @@ func (d prefixPhotoDir) Close() error {
 	return nil
 }
 
-func openIphotoZip(path string) (*DB, error) {
+func openIphotoZip(path string) (*Lib, error) {
 	z, err := zip.OpenReader(path)
 	if err != nil {
 		return nil, err
@@ -106,14 +133,14 @@ func openIphotoZip(path string) (*DB, error) {
 		}
 	}
 
-	db := &DB{
+	lib := &Lib{
 		dir: newZipPhotoDir(z, root),
 	}
-	if err := readIphotoDB(db, tempDir); err != nil {
+	if err := readIphotoDB(lib, tempDir); err != nil {
 		return nil, err
 	}
 	ok = true
-	return db, nil
+	return lib, nil
 }
 
 type zipPhotoDir struct {

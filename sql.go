@@ -10,17 +10,17 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-func readIphotoDB(db *DB, prefix string) (err error) {
+func readIphotoDB(lib *Lib, prefix string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
 		}
 	}()
-	mustReadIphotoDB(db, prefix)
+	mustReadIphotoDB(lib, prefix)
 	return nil
 }
 
-func mustReadIphotoDB(res *DB, prefix string) {
+func mustReadIphotoDB(lib *Lib, prefix string) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	panicOn(err)
 	defer db.Close()
@@ -67,9 +67,9 @@ func mustReadIphotoDB(res *DB, prefix string) {
 		ORDER BY V.imageDate;`)
 	panicOn(err)
 	defer rows.Close()
-	res.Photo = make(map[PhotoKey]Photo)
-	res.EventPhoto = make(map[EventKey][]PhotoKey)
-	res.PlacePhoto = make(map[PlaceKey][]PhotoKey)
+	lib.Photo = make(map[PhotoKey]Photo)
+	lib.EventPhoto = make(map[EventKey][]PhotoKey)
+	lib.PlacePhoto = make(map[PlaceKey][]PhotoKey)
 	for rows.Next() {
 		var photoId, eventId, placeId int
 		var p Photo
@@ -91,10 +91,10 @@ func mustReadIphotoDB(res *DB, prefix string) {
 		pk, ek, lk := PhotoKey(photoId), EventKey(eventId), PlaceKey(placeId)
 		p.Event = ek
 		p.Place = lk
-		p.dir = res.dir
-		res.Photo[pk] = p
-		res.EventPhoto[ek] = append(res.EventPhoto[ek], pk)
-		res.PlacePhoto[lk] = append(res.PlacePhoto[lk], pk)
+		p.dir = lib.dir
+		lib.Photo[pk] = p
+		lib.EventPhoto[ek] = append(lib.EventPhoto[ek], pk)
+		lib.PlacePhoto[lk] = append(lib.PlacePhoto[lk], pk)
 	}
 	panicOn(rows.Err())
 
@@ -111,7 +111,7 @@ func mustReadIphotoDB(res *DB, prefix string) {
 		FROM L.RKFolder;`)
 	panicOn(err)
 	defer rows.Close()
-	res.Event = make(map[EventKey]Event)
+	lib.Event = make(map[EventKey]Event)
 	for rows.Next() {
 		var eventId int
 		var name string
@@ -119,7 +119,7 @@ func mustReadIphotoDB(res *DB, prefix string) {
 		var isHidden, isFavorite, isInTrash int
 		panicOn(rows.Scan(&eventId, &name, &mind, &maxd,
 			&isHidden, &isFavorite, &isInTrash))
-		res.Event[EventKey(eventId)] = Event{
+		lib.Event[EventKey(eventId)] = Event{
 			Name:     norm.NFC.String(name),
 			MinDate:  toTimeStamp(mind),
 			MaxDate:  toTimeStamp(maxd),
@@ -143,7 +143,7 @@ func mustReadIphotoDB(res *DB, prefix string) {
 		FROM P.RKPlace;`)
 	panicOn(err)
 	defer rows.Close()
-	res.Place = make(map[PlaceKey]Place)
+	lib.Place = make(map[PlaceKey]Place)
 	for rows.Next() {
 		var placeId int
 		var centroid string
@@ -158,7 +158,7 @@ func mustReadIphotoDB(res *DB, prefix string) {
 			p.Centroid.Lat = (p.Min.Lat + p.Max.Lat) / 2
 			p.Centroid.Lon = (p.Min.Lon + p.Max.Lon) / 2
 		}
-		res.Place[PlaceKey(placeId)] = p
+		lib.Place[PlaceKey(placeId)] = p
 	}
 	panicOn(rows.Err())
 
@@ -173,7 +173,7 @@ func mustReadIphotoDB(res *DB, prefix string) {
 		FROM F.RKFaceName;`)
 	panicOn(err)
 	defer rows.Close()
-	res.Face = make(map[FaceKey]Face)
+	lib.Face = make(map[FaceKey]Face)
 	for rows.Next() {
 		var faceId int
 		var f Face
@@ -181,7 +181,7 @@ func mustReadIphotoDB(res *DB, prefix string) {
 		f.Name = norm.NFC.String(f.Name)
 		f.FullName = norm.NFC.String(f.FullName)
 		f.Email = norm.NFC.String(f.Email)
-		res.Face[FaceKey(faceId)] = f
+		lib.Face[FaceKey(faceId)] = f
 	}
 	panicOn(rows.Err())
 
@@ -189,14 +189,14 @@ func mustReadIphotoDB(res *DB, prefix string) {
 	rows, err = db.Query(`SELECT versionId, faceKey FROM L.RKVersionFaceContent;`)
 	panicOn(err)
 	defer rows.Close()
-	res.FacePhoto = make(map[FaceKey][]PhotoKey)
-	res.PhotoFace = make(map[PhotoKey][]FaceKey)
+	lib.FacePhoto = make(map[FaceKey][]PhotoKey)
+	lib.PhotoFace = make(map[PhotoKey][]FaceKey)
 	for rows.Next() {
 		var photoId, faceId int
 		panicOn(rows.Scan(&photoId, &faceId))
 		pk, fk := PhotoKey(photoId), FaceKey(faceId)
-		res.FacePhoto[fk] = append(res.FacePhoto[fk], pk)
-		res.PhotoFace[pk] = append(res.PhotoFace[pk], fk)
+		lib.FacePhoto[fk] = append(lib.FacePhoto[fk], pk)
+		lib.PhotoFace[pk] = append(lib.PhotoFace[pk], fk)
 	}
 	panicOn(rows.Err())
 }
